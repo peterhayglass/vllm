@@ -222,3 +222,12 @@ class AsyncEngineArgs(EngineArgs):
                             'ID numbers being printed in log. '
                             'Default: unlimited.')
         return parser
+    
+
+    @classmethod
+    def from_cli_args(cls, args: argparse.Namespace) -> 'AsyncEngineArgs':
+        # Get the list of attributes of this dataclass.
+        attrs = [attr.name for attr in dataclasses.fields(cls)]
+        # Set the attributes from the parsed arguments.
+        engine_args = cls(**{attr: getattr(args, attr) for attr in attrs})
+        return engine_args
