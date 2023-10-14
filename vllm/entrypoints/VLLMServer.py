@@ -1,10 +1,12 @@
 import argparse
 import json
-import sys
-from typing import AsyncGenerator, Union, List
+import os
+from typing import AsyncGenerator, Union, List, Optional
+from http import HTTPStatus
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 import uvicorn
 
@@ -17,6 +19,11 @@ from vllm.transformers_utils.tokenizer import get_tokenizer
 
 TIMEOUT_KEEP_ALIVE = 5  # seconds.
 TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds.
+API_KEY_NAME = "Authorization"
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+
 app = FastAPI()
 
 
@@ -28,8 +35,16 @@ class TokenUsageResponse(BaseModel):
     token_count: int
 
 
+async def auth_check(api_key: str = Depends(api_key_header)) -> None:
+    if api_key != SECRET_KEY:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
+                            detail="Invalid API key")
+    
+
 @app.post("/token_usage")
-async def get_token_usage(request: TokenUsageRequest) -> TokenUsageResponse:
+async def get_token_usage(request: TokenUsageRequest,
+                          _auth: None = Depends(auth_check)
+                          ) -> TokenUsageResponse:
     """Tokenize a string and return the token count
     """
     if isinstance(request.prompt, str):
@@ -47,7 +62,7 @@ async def get_token_usage(request: TokenUsageRequest) -> TokenUsageResponse:
 
 
 @app.post("/generate")
-async def generate(request: Request) -> Response:
+async def generate(request: Request, _auth: None = Depends(auth_check)) -> Response:
     """Generate completion for the request.
     The request should be a JSON object with the following fields:
     - prompt: the prompt to use for the generation.
