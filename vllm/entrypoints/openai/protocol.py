@@ -72,6 +72,7 @@ class ChatCompletionRequest(BaseModel):
     use_beam_search: Optional[bool] = False
     stop_token_ids: Optional[List[int]] = Field(default_factory=list)
     skip_special_tokens: Optional[bool] = True
+    spaces_between_special_tokens: Optional[bool] = True
 
 
 class CompletionRequest(BaseModel):
@@ -98,6 +99,7 @@ class CompletionRequest(BaseModel):
     use_beam_search: Optional[bool] = False
     stop_token_ids: Optional[List[int]] = Field(default_factory=list)
     skip_special_tokens: Optional[bool] = True
+    spaces_between_special_tokens: Optional[bool] = True
 
 
 class LogProbs(BaseModel):
@@ -137,6 +139,7 @@ class CompletionStreamResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[CompletionResponseStreamChoice]
+    usage: Optional[UsageInfo]
 
 
 class ChatMessage(BaseModel):
@@ -176,3 +179,5 @@ class ChatCompletionStreamResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[ChatCompletionResponseStreamChoice]
+    usage: Optional[UsageInfo] = Field(
+        default=None, description="data about request and response")
